@@ -7,6 +7,8 @@ import requests
 import randomjoke
 from discord import FFmpegPCMAudio
 from config import ULYTOKEN
+import sqlite
+from datetime import datetime
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -136,6 +138,23 @@ async def guess(ctx):
         await ctx.send("YIPPEE!!")
     else:
         await ctx.send(f"Fuckoboingo! It's actually {answer}!")
+
+
+@bot.command(aliases=["forage", "pick"])
+async def berry(ctx):
+    row = sqlite.select_berries(ctx.author.id)
+    if row is not None:
+        now = datetime.now().timestamp()
+        seconds = now - row[1]
+        cooldown = 10
+        if seconds < cooldown:
+            await ctx.send(
+                f"Give the berries time to grow! **Try again in {int(cooldown - seconds)} seconds.**"
+            )
+            return
+    amount = random.randint(1, 50)
+    sqlite.add_berries(ctx.author.id, amount)
+    await ctx.send(f"You foraged **{amount} berries!** :blueberries:")
 
 
 bot.run(ULYTOKEN)
