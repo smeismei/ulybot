@@ -36,6 +36,9 @@ async def on_message(message):
         gif = tenor.random_gif("among us")
         await message.channel.send(gif)
 
+    if "git" in message.content.lower():
+        await message.channel.send("got")
+
     if "cat" in message.content.lower() or "kitty" in message.content.lower():
         gif = tenor.random_gif("kitty")
         await message.channel.send(gif)
