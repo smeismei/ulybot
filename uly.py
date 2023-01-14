@@ -139,6 +139,8 @@ async def guess(ctx):
     else:
         await ctx.send(f"Fuckoboingo! It's actually {answer}!")
 
+    # Berry Picking Command
+
 
 @bot.command(aliases=["forage", "pick"])
 async def berry(ctx):
@@ -155,6 +157,18 @@ async def berry(ctx):
     amount = random.randint(1, 50)
     sqlite.add_berries(ctx.author.id, amount)
     await ctx.send(f"You foraged **{amount} berries!** :blueberries:")
+
+
+@bot.command()
+async def berrycount(ctx):
+    row = sqlite.select_berries(ctx.author.id)
+    if row is None:
+        await ctx.send("You have **no berries!**")
+        return
+    if row is not None:
+        berries = row[2]
+        await ctx.send(f":basket: You have **{berries} berries!**")
+        return
 
 
 bot.run(ULYTOKEN)
