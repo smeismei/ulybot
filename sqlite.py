@@ -70,5 +70,17 @@ def select_berries(userid):
         return row
 
 
+def leaderboard_berries():
+    sql = """
+    SELECT userid, berrycount FROM berry ORDER BY berrycount DESC
+    """
+    conn = create_connection(database)
+    if conn is not None:
+        cur = conn.cursor()
+        cur.execute(sql)
+        results = cur.fetchall()
+        return results
+
+
 if __name__ == "__main__":
     main()

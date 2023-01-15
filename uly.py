@@ -9,6 +9,7 @@ from discord import FFmpegPCMAudio
 from config import ULYTOKEN
 import sqlite
 from datetime import datetime
+from typing import TYPE_CHECKING, Callable, Optional
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -27,6 +28,20 @@ async def on_ready():
     for guild in bot.guilds:
         print(guild.name)
     print("---------------------------------")
+
+
+def displayname(member: Optional[discord.User | discord.Member], escape=True):
+    if member is None:
+        return None
+
+    name = member.name
+    if isinstance(member, discord.Member) and member.nick is not None:
+        name = member.nick
+
+    if escape:
+        name = discord.utils.escape_markdown(name)
+
+    return name
 
 
 @bot.event
@@ -143,23 +158,58 @@ async def guess(ctx):
 
 
 @bot.command(aliases=["forage", "pick"])
-async def berry(ctx):
-    row = sqlite.select_berries(ctx.author.id)
-    if row is not None:
-        now = datetime.now().timestamp()
-        seconds = now - row[1]
-        cooldown = 10
-        if seconds < cooldown:
-            await ctx.send(
-                f"Give the berries time to grow! **Try again in {int(cooldown - seconds)} seconds.**"
-            )
-            return
-    amount = random.randint(1, 50)
-    sqlite.add_berries(ctx.author.id, amount)
-    await ctx.send(f"You foraged **{amount} berries!** :blueberries:")
+async def berry(ctx, leaderboard=None, scope=""):
+    if leaderboard == "leaderboard":
+        results = sqlite.leaderboard_berries()
+        globalresults = scope.lower() == "global"
+        i = 1
+        line = []
+        medal_emoji = [":first_place", ":second_place:", ":third_place:"]
+        if results:
+            for userid, berrycount in results:
+                if globalresults:
+                    user = ctx.author.id(userid)
+                else:
+                    user = ctx.guild.get_member(userid)
+
+                if user is None or berrycount == 0:
+                    continue
+
+                if i <= len(medal_emoji):
+                    ranking = medal_emoji[i - 1]
+                else:
+                    ranking = f"`#{i:2}`"
+
+                line.append(
+                    f"{ranking} **{displayname(user)}** - **{berrycount}** berries"
+                )
+                i += 1
+        if not line:
+            ctx.send("No one has picked any berries yet.")
+
+        content = discord.Embed(
+            title=f":blueberries: {'Global' if globalresults else ctx.guild.name} berry leaderboard",
+            color=int("55acee", 16),
+        )
+        await ctx.channel.send(embed=content)
+
+    else:
+        row = sqlite.select_berries(ctx.author.id)
+        if row is not None:
+            now = datetime.now().timestamp()
+            seconds = now - row[1]
+            cooldown = 10
+            if seconds < cooldown:
+                await ctx.send(
+                    f"Give the berries time to grow! **Try again in {int(cooldown - seconds)} seconds.**"
+                )
+                return
+        amount = random.randint(1, 50)
+        sqlite.add_berries(ctx.author.id, amount)
+        await ctx.send(f"You foraged **{amount} berries!** :blueberries:")
 
 
-@bot.command()
+@bot.command(aliases=["bc"])
 async def berrycount(ctx):
     row = sqlite.select_berries(ctx.author.id)
     if row is None:
