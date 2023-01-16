@@ -159,16 +159,16 @@ async def guess(ctx):
 
 @bot.command(aliases=["forage", "pick"])
 async def berry(ctx, leaderboard=None, scope=""):
-    if leaderboard == "leaderboard":
+    if leaderboard in ["leaderboard", "lb"]:
         results = sqlite.leaderboard_berries()
         globalresults = scope.lower() == "global"
         i = 1
         line = []
-        medal_emoji = [":first_place", ":second_place:", ":third_place:"]
+        medal_emoji = [":first_place:", ":second_place:", ":third_place:"]
         if results:
             for userid, berrycount in results:
                 if globalresults:
-                    user = ctx.author.id(userid)
+                    user = bot.get_user(userid)
                 else:
                     user = ctx.guild.get_member(userid)
 
@@ -190,6 +190,7 @@ async def berry(ctx, leaderboard=None, scope=""):
         content = discord.Embed(
             title=f":blueberries: {'Global' if globalresults else ctx.guild.name} berry leaderboard",
             color=int("55acee", 16),
+            description="\n".join(line),
         )
         await ctx.channel.send(embed=content)
 
@@ -205,8 +206,13 @@ async def berry(ctx, leaderboard=None, scope=""):
                 )
                 return
         amount = random.randint(1, 50)
-        sqlite.add_berries(ctx.author.id, amount)
+        goldberry = random.randint(1, 100) == 1
+        sqlite.add_berries(ctx.author.id, amount + (150 if goldberry else 0))
         await ctx.send(f"You foraged **{amount} berries!** :blueberries:")
+        if goldberry:
+            await ctx.send(
+                f":sparkles: You foraged a **Golden Berry!** :sparkles: (+150 berries)"
+            )
 
 
 @bot.command(aliases=["bc"])
