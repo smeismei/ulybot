@@ -16,7 +16,7 @@ intents.message_content = True
 intents.members = True
 
 bot = commands.Bot(
-    command_prefix="&", description="""funky command!""", intents=intents
+    command_prefix="t ", description="""funky command!""", intents=intents
 )
 
 
@@ -198,20 +198,23 @@ async def berry(ctx, leaderboard=None, scope=""):
         row = sqlite.select_berries(ctx.author.id)
         if row is not None:
             now = datetime.now().timestamp()
+
             seconds = now - row[1]
             cooldown = 10
             if seconds < cooldown:
                 await ctx.send(
-                    f"Give the berries time to grow! **Try again in {int(cooldown - seconds)} seconds.**"
+                    f"Give the berries time to grow, **{displayname(ctx.author)}**! **Try again in {int(cooldown - seconds)} seconds.**"
                 )
                 return
         amount = random.randint(1, 50)
         goldberry = random.randint(1, 100) == 1
         sqlite.add_berries(ctx.author.id, amount + (150 if goldberry else 0))
-        await ctx.send(f"You foraged **{amount} berries!** :blueberries:")
+        await ctx.send(
+            f"**{displayname(ctx.author)}** foraged **{amount} berries!** :blueberries:"
+        )
         if goldberry:
             await ctx.send(
-                f":sparkles: You foraged a **Golden Berry!** :sparkles: (+150 berries)"
+                f":sparkles: **{displayname(ctx.author)}** foraged a **Golden Berry!** :sparkles: (+150 berries)"
             )
 
 
@@ -225,6 +228,12 @@ async def berrycount(ctx):
         berries = row[2]
         await ctx.send(f":basket: You have **{berries} berries!**")
         return
+
+
+@bot.command()
+async def sky(ctx):
+    randomitem = random.randint(1, 800000)
+    await ctx.send(f"https://everskies.com/item/variation/{randomitem}")
 
 
 bot.run(ULYTOKEN)
